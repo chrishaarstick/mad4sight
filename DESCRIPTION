@@ -1,0 +1,25 @@
+Package: mad4sight
+Title: MadStork Foresight
+Version: 0.0.0.9000
+Authors@R: person("Chris", "Haarstick", email = "chrishaarstick@gmail.com", role = c("aut", "cre"))
+Description: Framework for automated forecasting workflows. Uses the forecast package alogrithms.
+Depends: R (>= 3.5.0)
+License: file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+  dplyr,
+  tidyr,
+  purrr,
+  tibble,
+  magrittr,
+  lubridate,
+  zoo,
+  checkmate,
+  stats,
+  utils,
+  forecast,
+  future
+Suggests: 
+  testthat
+RoxygenNote: 6.1.0
