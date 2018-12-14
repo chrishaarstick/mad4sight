@@ -59,14 +59,15 @@ neophyte <- function(df,
       x_vars = x_vars,
       sampling = sampling,
       indices = indices,
-      models = list(),
-      fits = tibble::tibble(),
+      models = models,
+      fit = tibble::tibble(),
       performance = tibble::tibble(),
       measure = measure,
       confidence_levels = confidence_levels,
       created_at = Sys.time(),
       final_model = NULL,
-      forecast = tibble::tibble()
+      forecast = tibble::tibble(),
+      backend = backend
     ),
     class = "seer"
   )
@@ -180,36 +181,6 @@ seer <- function(df,
                             index  = as.character(names(indices$train)))
   
   
-  # fit models to training samples
-  fits <- foreach::foreach(
-    iter = 1:nrow(model_grid),
-    .packages = c("forecast", "dplyr"),
-    .export = c("model_grid", "df", "indices", "x_vars", "y_var"),
-    .errorhandling = "pass") %dopar% {
-      
-      mg <- model_grid[iter, ]                     
-      
-      # set algorithm
-      algo <- get(as.character(mg$algo), asNamespace("forecast"))
-      
-      # set index
-      index <- indices[[as.character(mg$index)]]
-      
-      # get numeric time series target
-      y <- df[[y_var]][index[[1]]]
-      
-      # set model arguments
-      mod <- purrr::keep(models, ~.x$algo == mg$algo)
-      algo_args <- modifyList(mod[names(mod) != "algo"], list(y = y))
-      
-      if(! is.null(x_vars) & "xreg" %in% names(formals(algo))) {
-        xreg <- dplyr::select(df, x_vars)
-        algo_args <- modifyList(algo_args, list(xreg = xreg))
-      }
-      
-      # fit model
-      do.call(algo, algo_args)
-    }
   
                     
   
@@ -223,11 +194,60 @@ seer <- function(df,
 
 
 
-train_models <- function(obj) {
+#' Fit Seer Models
+#' 
+#' Fits all models on all training samples in seer object
+#'
+#' @param obj seer object
+#'
+#' @return list with model algo, index, and fit in each element
+#' @importFrom foreach %dopar%
+#' @export
+fit_models <- function(obj) {
+  
   checkmate::assert_class(obj, "seer")
   
   # set backend execution
   future::plan(strategy = get(obj$backend, asNamespace("future"))())
   doFuture::registerDoFuture()
   
+  # create model grid
+  model_grid <- tibble::as.tibble(
+    expand.grid(algo = purrr::map_chr(obj$models, "algo"), 
+                index  = as.character(names(obj$indices$train))))
+  
+  
+  # fit models to training samples
+  foreach::foreach(
+    iter = 1:nrow(model_grid),
+    .packages = c("forecast", "dplyr"),
+    .export = c("model_grid", "obj", "model_algos"),
+    .errorhandling = "pass") %dopar% {
+      
+      mg <- model_grid[iter, ]                     
+      
+      # set algorithm
+      algo_pack <- model_algos %>% 
+        dplyr::filter(algorithm == mg$algo) %>% 
+        dplyr::pull(package)
+      algo <- get(as.character(mg$algo), asNamespace(algo_pack))
+      
+      # set index
+      index <- obj$indices[[as.character(mg$index)]]
+      
+      # get numeric time series target
+      y <- obj$df[[obj$y_var]][index[[1]]]
+      
+      # set model arguments
+      mod <- purrr::keep(obj$models, ~.x$algo == mg$algo)
+      algo_args <- modifyList(mod[names(mod) != "algo"], list(y = y))
+      
+      if(! is.null(obj$x_vars) & "xreg" %in% names(formals(algo))) {
+        xreg <- dplyr::select_at(obj$df, obj$x_vars)
+        algo_args <- modifyList(algo_args, list(xreg = xreg))
+      }
+      
+      # fit model
+      c(as.list(mg), list(fit = do.call(algo, algo_args)))
+    }
 }

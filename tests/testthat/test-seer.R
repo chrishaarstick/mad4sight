@@ -36,9 +36,31 @@ test_that("neophyte function works as expected", {
   
   expect_class(s1, "seer")
   expect_data_frame(s1$df)
-  expect_data_frame(s1$fits)
+  expect_data_frame(s1$fit)
   expect_data_frame(s1$performance)
   expect_data_frame(s1$forecast)
   expect_list(s1$models)
   expect_list(s1$indices)
+})
+
+
+test_that("fit_models function works as expected", {
+  
+  m1 <- neophyte(df,
+                 y_var = "y",
+                 x_vars = NULL,
+                 sampling = samples(method = "single", args = list()),
+                 models = list(model(algo = "auto.arima")),
+                 measure = "rmse",
+                 confidence_levels = c(.8, .95),
+                 horizon = 1,
+                 forecast_xreg = NULL,
+                 backend = "sequential") %>% 
+    fit_models(.)
+  
+  expect_list(m1)
+  expect_equal(names(m1[[1]]), c("algo", "index", "fit"))
+  expect_class(m1[[1]]$fit, "ARIMA")
+  
+  
 })
