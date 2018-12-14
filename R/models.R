@@ -13,6 +13,7 @@
 #' @param desc optional description
 #'
 #' @return model class object
+#' @importFrom magrittr %>% 
 #' @export
 #'
 #' @examples
@@ -22,13 +23,13 @@ model <- function(algo,
                   uid = madutils::random_string("model"),
                   desc = "") {
   
-  checkmate::assert_choice(algo, models$algorithms)
+  checkmate::assert_choice(algo, models$algorithm)
   checkmate::assert_list(args)
   checkmate::assert_string(uid)
   checkmate::assert_string(desc)
   
   algo_pack <- models %>% 
-    dplyr::filter(algorithms == algo) %>% 
+    dplyr::filter(algorithm == algo) %>% 
     dplyr::pull(package)
   checkmate::assert_subset(names(args), names(formals(get(algo, asNamespace(algo_pack)))))
                            

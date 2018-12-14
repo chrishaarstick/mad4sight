@@ -2,6 +2,12 @@
 # seer class object functions and methods ---------------------------------
 
 
+neophyte <- 
+
+
+
+
+
 #' Seer function to create forecasts
 #'
 #' @param df 

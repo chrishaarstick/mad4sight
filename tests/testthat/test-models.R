@@ -15,8 +15,8 @@ context("models unit tests")
 
 test_that("models constructor works as expected", {
   
-  m1 <- models("auto.arima")
-  expect_class("model")
+  m1 <- model("auto.arima")
+  expect_class(m1, "model")
   
-  expect_error(models("not-model"))
+  expect_error(model("not-model"))
 })

@@ -5,7 +5,7 @@
 #' Create Time Slice Samples
 #'
 #' Function to create time slice indices. Based on
-#' \link[Caret]{createTimeSlices} from Caret package
+#' \link[caret]{createTimeSlices} from Caret package
 #'
 #' @param df data.frame to sample from
 #' @param width number of records per training sample
@@ -48,8 +48,8 @@ slices <- function(df,
   
   
   # create sequences
-  s1 <- map2(starts, stops, seq)
-  s2 <- map2(stops + 1, stops + horizon, seq)
+  s1 <- purrr::map2(starts, stops, seq)
+  s2 <- purrr::map2(stops + 1, stops + horizon, seq)
   
   
   # create sample output

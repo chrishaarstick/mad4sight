@@ -26,7 +26,7 @@ list with train and validation samples
 }
 \description{
 Function to create time slice indices. Based on
-\link[Caret]{createTimeSlices} from Caret package
+\link[caret]{createTimeSlices} from Caret package
 }
 \examples{
 library(tibble)

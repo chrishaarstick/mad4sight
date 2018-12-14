@@ -19,7 +19,9 @@ Imports:
   stats,
   utils,
   forecast,
-  future
+  future,
+  foreach,
+  furrr
 Suggests: 
   testthat
 Remotes: chrishaarstick/madutils
