@@ -23,12 +23,12 @@ model <- function(algo,
                   uid = madutils::random_string("model"),
                   desc = "") {
   
-  checkmate::assert_choice(algo, models$algorithm)
+  checkmate::assert_choice(algo, model_algos$algorithm)
   checkmate::assert_list(args)
   checkmate::assert_string(uid)
   checkmate::assert_string(desc)
   
-  algo_pack <- models %>% 
+  algo_pack <- model_algos %>% 
     dplyr::filter(algorithm == algo) %>% 
     dplyr::pull(package)
   checkmate::assert_subset(names(args), names(formals(get(algo, asNamespace(algo_pack)))))

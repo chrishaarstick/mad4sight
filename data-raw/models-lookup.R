@@ -1,13 +1,13 @@
-# models look up table ----------------------------------------------------
+# model_algo look up table -------------------------------------------------
 
 # R Libraries
 library(tibble)
 
 
-# create `models` look up table
+# create `model_algo` look up table
 
-# Forecast models currently supported
-models <- tibble(
+# Forecast modeling algorithms currently supported
+model_algos <- tibble(
   algorithm =  c(
     "Arima",
     "arfima",
@@ -39,6 +39,6 @@ models <- tibble(
 )
 
 
-save(models, file = "data/models.rdata")
+save(model_algos, file = "data/model_algos.rdata")
 
 

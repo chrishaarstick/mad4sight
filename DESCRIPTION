@@ -21,7 +21,7 @@ Imports:
   forecast,
   future,
   foreach,
-  furrr
+  doFuture
 Suggests: 
   testthat
 Remotes: chrishaarstick/madutils

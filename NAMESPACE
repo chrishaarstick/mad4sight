@@ -2,6 +2,9 @@
 
 export(model)
 export(neophyte)
+export(samples)
+export(seer)
+export(single)
 export(slices)
 export(split)
 importFrom(magrittr,"%>%")

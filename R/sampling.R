@@ -2,6 +2,48 @@
 # seer sampling -----------------------------------------------------------
 
 
+#' Samples Constructor
+#'
+#' Function to create samples class object. Validates inputs with supported
+#' sampling functions in mad4sight. Used internally within `seer` function
+#'
+#' @param method sampling method
+#' @param args list of sampling method arguments
+#'
+#' @return samples class object
+#' @export
+#'
+#' @examples
+#' samples(method = "split", args = list(ratio = .5))
+samples <- function(method, args = list()) {
+  
+  checkmate::assert_choice(method, c("single", "slices", "split"))
+  
+  sample_fun <- match.fun(method)
+  
+  checkmate::assert_list(args)
+  checkmate::assert_subset(names(args), names(formals(sample_fun)))
+  
+  required_args <- sample_fun %>% 
+    formals() %>% 
+    as.list() %>% 
+    purrr::keep(., ~ . == "") %>% 
+    names() %>%
+    purrr::keep( ~ . != "df")
+  checkmate::assert_subset(required_args, names(args))
+  
+  structure(
+    list(
+      method = method,
+      args = args
+    ),
+    class = "samples"
+  )
+}
+
+
+
+
 #' Create Time Slice Samples
 #'
 #' Function to create time slice indices. Based on
@@ -84,5 +126,27 @@ split <- function(df, ratio) {
   s <- floor(nrow(df) * ratio)
   
   list(train = list(train = 1:s), validation = list(validation = (s+1):n))
+}
+
+
+
+#' Create Single Sample
+#' 
+#' Function to create a single training sample formatted for mad4sight use 
+#'
+#' @param df data.frame to sample
+#'
+#' @return list with train and validation named indices
+#' @export
+#'
+#' @examples
+#' library(tibble)
+#' df <- tibble(i = 1:20)
+#' single(df)
+single <- function(df) {
+  
+  checkmate::assert_data_frame(df)
+  
+  list(train = list(train = 1:nrow(df)), validation = list(validation = NULL))
 }
 

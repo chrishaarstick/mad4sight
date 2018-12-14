@@ -87,3 +87,35 @@ test_that("split works as expected", {
   expect_equal(length(s1$train$train), floor(.ratio * nrow(df)))
   expect_equal(length(s1$validation$validation), nrow(df) - length(s1$train$train))
 })
+
+
+
+# single unit tests -------------------------------------------------------
+
+test_that("single works as expected", {
+  s1 <- single(df)
+  
+  expect_list(s1)
+  expect_subset(names(s1), c("train", "validation"))
+  expect_equal(length(s1$train), length(s1$validation))
+  expect_equal(length(s1$train$train), nrow(df))
+  expect_null(s1$validation$validation)
+})
+
+
+# samples unit tests ------------------------------------------------------
+
+test_that("samples works as expected", {
+  
+  s1 <- samples(method = "single", args = list(df = df))
+  s2 <- samples(method = "split", args = list(df = df, ratio = .5))
+  s3 <- samples(method = "slices", args = list(df = df, width = 15, horizon = 1))
+  
+  expect_class(s1, "samples")
+  expect_class(s2, "samples")
+  expect_class(s3, "samples")
+  
+  expect_error(samples("nosamplefun"))
+  expect_error(samples(method = "slices", args = list(size = 5)))
+  expect_error(samples(method = "slices", args = list(df = df, width = 15)))
+})
