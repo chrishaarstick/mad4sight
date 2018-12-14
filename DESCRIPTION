@@ -22,4 +22,5 @@ Imports:
   future
 Suggests: 
   testthat
+Remotes: chrishaarstick/madutils
 RoxygenNote: 6.1.0

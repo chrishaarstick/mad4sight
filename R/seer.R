@@ -14,7 +14,6 @@
 #' @param backend 
 #'
 #' @return
-#' @importFrom foreach %dopar%
 #' @export
 #'
 #' @examples
@@ -23,9 +22,15 @@ seer <- function(df,
                  y_var,
                  x_vars = NULL,
                  samples = list(strategy = "none"),
-                 measure = "rmse",
                  models = list(list(algo = "auto.arima")),
-                 backend = "sequential") {
+                 measure = "rmse",
+                 confidence_levels = c(.8, .95),
+                 horizon = 1,
+                 forecast_xreg = NULL,
+                 backend = "sequential",
+                 user = NULL,
+                 uid = madutils::random_string("seer"),
+                 desc = "") {
   
   checkmate::assert_data_frame(df, min.cols = 2)
   checkmate::assert_string(index_var)
@@ -36,7 +41,30 @@ seer <- function(df,
   checkmate::assert_choice(samples$strategy, c("none", "slice", "split"))
   checkmate::assert_list(models)
   lapply(models, function(x) checkmate::assert_choice( "algo", names(x)))
+  checkmate::assert_numeric(confidence_levels, lower = .5, upper = 1, min.len = 1, max.len = 2)
+  checkmate::assert_numeric(horizon, lower = 1)
+  checkmate::assert_data_frame(forecast_xreg, null.ok = TRUE)
   checkmate::assert_choice(backend, choices = c("sequential", "multisession"))
+  
+  # create empty seer object
+  obj <- structure(
+    list(
+      indices = list(),
+      models = list(),
+      performance = tibble::tibble(),
+      fits = tibble::tibble(),
+      measure = measure,
+      confidence_level = confidence_level,
+      created_at = Sys.time(),
+      runtime = NULL,
+      final_model = NULL,
+      forecast = tibble::tibble(),
+      user = ifelse(is.null(user), as.character(Sys.info()["user"]), user),
+      uid = uid,
+      desc = desc
+    )
+  )
+  
   
   
   # set backend execution
@@ -92,7 +120,7 @@ seer <- function(df,
         val_index <- indices$validation[[i]]
         
         if(x_var_flag) {
-          xreg <- df[val_index, x_var, drop=FALSE]
+          xreg <- df[val_index, x_vars, drop=FALSE]
         } else {
           xreg <- NULL
         }
