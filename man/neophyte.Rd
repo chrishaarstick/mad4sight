@@ -4,15 +4,13 @@
 \alias{neophyte}
 \title{Seer Constructor Function}
 \usage{
-neophyte(df, y_var, x_vars, sampling, models, measure, confidence_levels,
-  horizon, forecast_xreg, backend)
+neophyte(df, y_var, sampling, models, measure, confidence_levels, horizon,
+  forecast_xreg, backend)
 }
 \arguments{
 \item{df}{data.frame input}
 
 \item{y_var}{column name of target variable}
-
-\item{x_vars}{optional column names of covariates}
 
 \item{sampling}{sample constructor function. see `samples` function for
 details}
@@ -32,6 +30,8 @@ used in the forecast predictions}
 
 \item{backend}{future backend mode. `sequential` creates single threaded
 execution. `multisession` creates parrallel backend}
+
+\item{x_vars}{optional column names of covariates}
 }
 \value{
 seer class object

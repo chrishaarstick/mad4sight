@@ -19,59 +19,24 @@ fit_models <- function(obj) {
   doFuture::registerDoFuture()
   
   
-  # create model grid
-  model_grid <- tibble::as.tibble(
-    expand.grid(uid = purrr::map_chr(obj$models, "uid"), 
-                algo = purrr::map_chr(obj$models, "algo"), 
-                index  = as.character(names(obj$indices$train)))) %>% 
-    dplyr::mutate_if(., is.factor, as.character)
+  # create expanded list of model, index combos
+  mod_list <- list(uid = purrr::map_chr(obj$models, "uid"),
+                   index = as.character(names(obj$indices$train))) %>%
+    purrr::cross() 
   
+  # get all fits
+  fits <- mod_list %>% 
+    purrr::map(., ~ get_train_model_args(.$uid, .$index, obj = obj)) %>%
+    furrr::future_map(., ~ fit_model(.$model, .$df))
   
-  # fit models to training samples
-  foreach::foreach(
-    iter = 1:nrow(model_grid),
-    .packages = c("forecast", "dplyr"),
-    .export = c("model_grid", "obj", "model_algos"),
-    .errorhandling = "pass") %dopar% {
-      
-      mg <- model_grid[iter, ]                     
-      
-      # get model
-      mod <- purrr::keep(obj$models, ~.x$uid == mg$uid)[[1]]
-      
-      # set algorithm & arguments
-      algo_pack <- model_algos %>% 
-        dplyr::filter(algorithm == mg$algo) %>% 
-        dplyr::pull(package)
-      
-      algo <- get(as.character(mg$algo), asNamespace(algo_pack))
-      algo_args <- modifyList(mod$args, list(y = y))
-      
-      # set index
-      index <- obj$indices$train[[mg$index]]
-      
-      # apply model pipeline and get training dataset
-      train_df <- obj$df %>% 
-        dplyr::slice(index) %>%  
-        madutils::flow(., mod$pipeline)
-      
-      # get numeric time series target
-      y <- train_df[[obj$y_var]]
-      x_vars <- setdiff(colnames(train_df), obj$y_var)
-      
-      if(length(x_vars) > 0 & "xreg" %in% names(formals(algo))) {
-        xreg <- train_df[, obj$x_vars, drop=FALSE] 
-        algo_args <- modifyList(algo_args, list(xreg = xreg))
-      }
-      
-      # fit model
-      c(as.list(mg), list(fit = do.call(algo, algo_args)))
-    }
+  # creat flattened output structure
+  purrr::flatten_dfr(mod_list) %>% 
+    dplyr:::mutate(fit = fits)
 }
 
 
-
-get_model_args <- function(uid, index, obj) {
+# Internal get model arguments function 
+get_train_model_args <- function(uid, index, obj) {
   
   # get model
   model <- purrr::keep(obj$models, ~.x$uid == uid)[[1]]
@@ -87,7 +52,11 @@ get_model_args <- function(uid, index, obj) {
 }
 
 
+# Internal fit model helper function
 fit_model <- function(model, df) {
+  
+  # apply pipeline
+  df <- madutils::flow(df, model$pipeline)
   
   # get numeric time series target
   y <- df[[model$y_var]]
@@ -103,7 +72,7 @@ fit_model <- function(model, df) {
   
   # check for xreg predictors
   if(length(x_vars) > 0 & "xreg" %in% names(formals(algo))) {
-    xreg <- df[, obj$x_vars, drop=FALSE] 
+    xreg <- df[, x_vars, drop=FALSE] 
     algo_args <- modifyList(algo_args, list(xreg = xreg))
   }
   
@@ -111,3 +80,8 @@ fit_model <- function(model, df) {
   do.call(algo, algo_args)
 }
 
+
+# Internal get fitted helper function
+get_fitted <- function(model) {
+  tibble::tibble(predicted= as.numeric(model$fitted))
+}

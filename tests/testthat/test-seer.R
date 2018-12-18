@@ -55,15 +55,15 @@ test_that("fit_models function works as expected", {
                  backend = "sequential") %>% 
     fit_models(.)
   
-  expect_list(m1)
-  expect_equal(names(m1[[1]]), c("algo", "index", "fit"))
-  expect_class(m1[[1]]$fit, "ARIMA")
+  expect_data_frame(m1)
+  expect_equal(colnames(m1), c("uid", "index", "fit"))
+  expect_class(m1$fit[[1]], "ARIMA")
   
 })
 
 
 
-test_that("validation_models function works as expected", {
+test_that("get_model_predictions function works as expected", {
   
   obj <- neophyte(df,
                  y_var = "y",
@@ -77,12 +77,10 @@ test_that("validation_models function works as expected", {
   
   fits <- fit_models(obj)
   
-  m1 <- evaluate_models(obj, fits)
-  
-  expect_list(m1)
-  expect_equal(names(m1[[1]]), c("algo", "index", "fit"))
-  expect_class(m1[[1]]$fit, "ARIMA")
-  
+  predictions <- get_model_predictions(obj, fits)
+  expect_data_frame(predictions, ncols = 4)
+  expect_data_frame(predictions$data[[1]])
+  expect_true("predicted" %in% colnames(predictions$data[[1]]))
 })
 
 

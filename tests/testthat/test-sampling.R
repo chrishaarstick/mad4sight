@@ -84,8 +84,8 @@ test_that("split works as expected", {
   expect_list(s1)
   expect_subset(names(s1), c("train", "validation"))
   expect_equal(length(s1$train), length(s1$validation))
-  expect_equal(length(s1$train$train), floor(.ratio * nrow(df)))
-  expect_equal(length(s1$validation$validation), nrow(df) - length(s1$train$train))
+  expect_equal(length(s1$train$split), floor(.ratio * nrow(df)))
+  expect_equal(length(s1$validation$split), nrow(df) - length(s1$train$split))
 })
 
 

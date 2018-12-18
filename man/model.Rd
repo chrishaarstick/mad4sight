@@ -4,13 +4,15 @@
 \alias{model}
 \title{Create Forecast Model}
 \usage{
-model(algo, args = list(), uid = madutils::random_string("model"),
-  desc = "")
+model(algo, args = list(), pipe = madutils::pipeline(),
+  uid = madutils::random_string("model"), desc = "")
 }
 \arguments{
 \item{algo}{model algorithm string. ex - `auto.arima`}
 
 \item{args}{list of model arguments. default is empty list}
+
+\item{pipe}{model pipeline. default is identity}
 
 \item{uid}{optional sting uid argument. default is random_string}
 

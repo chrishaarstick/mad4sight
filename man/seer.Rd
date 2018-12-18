@@ -4,18 +4,16 @@
 \alias{seer}
 \title{Seer function to create forecasts}
 \usage{
-seer(df, y_var, x_vars = NULL, sampling = samples(method = "single",
-  args = list()), models = list(model(algo = "auto.arima")),
-  measure = "rmse", confidence_levels = c(0.8, 0.95), horizon = 1,
-  forecast_xreg = NULL, backend = "sequential", user = NULL,
+seer(df, y_var, sampling = samples(method = "single", args = list()),
+  models = list(model(algo = "auto.arima")), measure = "rmse",
+  confidence_levels = c(80, 95), horizon = 1, forecast_xreg = NULL,
+  backend = "sequential", user = NULL,
   uid = madutils::random_string("seer"), desc = "")
 }
 \arguments{
 \item{df}{data.frame input}
 
 \item{y_var}{column name of target variable}
-
-\item{x_vars}{optional column names of covariates}
 
 \item{sampling}{sample constructor function. see `samples` function for
 details}
