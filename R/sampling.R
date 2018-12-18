@@ -125,7 +125,7 @@ split <- function(df, ratio) {
   n <- nrow(df)
   s <- floor(nrow(df) * ratio)
   
-  list(train = list(train = 1:s), validation = list(validation = (s+1):n))
+  list(train = list(split = 1:s), validation = list(split = (s+1):n))
 }
 
 
@@ -147,6 +147,6 @@ single <- function(df) {
   
   checkmate::assert_data_frame(df)
   
-  list(train = list(train = 1:nrow(df)), validation = list(validation = NULL))
+  list(train = list(single = 1:nrow(df)), validation = list(single = NULL))
 }
 

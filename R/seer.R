@@ -26,7 +26,6 @@
 #' @export
 neophyte <- function(df,
                      y_var,
-                     x_vars,
                      sampling,
                      models,
                      measure,
@@ -37,10 +36,9 @@ neophyte <- function(df,
   
   checkmate::assert_data_frame(df, min.cols = 1)
   checkmate::assert_string(y_var)
-  checkmate::assert_character(x_vars, null.ok = TRUE)
   checkmate::assert_class(sampling, "samples")
   checkmate::assert_list(models)
-  checkmate::assert_numeric(confidence_levels, lower = .5, upper = 1, min.len = 1, max.len = 2)
+  checkmate::assert_numeric(confidence_levels, lower = 50, upper = 100, min.len = 1, max.len = 2)
   checkmate::assert_numeric(horizon, lower = 1)
   checkmate::assert_data_frame(forecast_xreg, null.ok = TRUE)
   checkmate::assert_choice(backend, choices = c("sequential", "multisession"))
@@ -56,7 +54,6 @@ neophyte <- function(df,
     list(
       df = df,
       y_var = y_var,
-      x_vars = x_vars,
       sampling = sampling,
       indices = indices,
       models = models,
@@ -91,11 +88,10 @@ neophyte <- function(df,
 #' @examples
 seer <- function(df,
                  y_var,
-                 x_vars = NULL,
                  sampling = samples(method = "single", args = list()),
                  models = list(model(algo = "auto.arima")),
                  measure = "rmse",
-                 confidence_levels = c(.8, .95),
+                 confidence_levels = c(80, 95),
                  horizon = 1,
                  forecast_xreg = NULL,
                  backend = "sequential",
@@ -107,7 +103,6 @@ seer <- function(df,
   # Create neophypte
   obj <- neophyte(df,
                   y_var,
-                  x_vars,
                   sampling,
                   models,
                   measure,
@@ -194,60 +189,3 @@ seer <- function(df,
 
 
 
-#' Fit Seer Models
-#' 
-#' Fits all models on all training samples in seer object
-#'
-#' @param obj seer object
-#'
-#' @return list with model algo, index, and fit in each element
-#' @importFrom foreach %dopar%
-#' @export
-fit_models <- function(obj) {
-  
-  checkmate::assert_class(obj, "seer")
-  
-  # set backend execution
-  future::plan(strategy = get(obj$backend, asNamespace("future"))())
-  doFuture::registerDoFuture()
-  
-  # create model grid
-  model_grid <- tibble::as.tibble(
-    expand.grid(algo = purrr::map_chr(obj$models, "algo"), 
-                index  = as.character(names(obj$indices$train))))
-  
-  
-  # fit models to training samples
-  foreach::foreach(
-    iter = 1:nrow(model_grid),
-    .packages = c("forecast", "dplyr"),
-    .export = c("model_grid", "obj", "model_algos"),
-    .errorhandling = "pass") %dopar% {
-      
-      mg <- model_grid[iter, ]                     
-      
-      # set algorithm
-      algo_pack <- model_algos %>% 
-        dplyr::filter(algorithm == mg$algo) %>% 
-        dplyr::pull(package)
-      algo <- get(as.character(mg$algo), asNamespace(algo_pack))
-      
-      # set index
-      index <- obj$indices[[as.character(mg$index)]]
-      
-      # get numeric time series target
-      y <- obj$df[[obj$y_var]][index[[1]]]
-      
-      # set model arguments
-      mod <- purrr::keep(obj$models, ~.x$algo == mg$algo)
-      algo_args <- modifyList(mod[names(mod) != "algo"], list(y = y))
-      
-      if(! is.null(obj$x_vars) & "xreg" %in% names(formals(algo))) {
-        xreg <- dplyr::select_at(obj$df, obj$x_vars)
-        algo_args <- modifyList(algo_args, list(xreg = xreg))
-      }
-      
-      # fit model
-      c(as.list(mg), list(fit = do.call(algo, algo_args)))
-    }
-}

@@ -98,8 +98,8 @@ test_that("single works as expected", {
   expect_list(s1)
   expect_subset(names(s1), c("train", "validation"))
   expect_equal(length(s1$train), length(s1$validation))
-  expect_equal(length(s1$train$train), nrow(df))
-  expect_null(s1$validation$validation)
+  expect_equal(length(s1$train$single), nrow(df))
+  expect_null(s1$validation$single)
 })
 
 
