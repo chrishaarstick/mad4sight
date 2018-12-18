@@ -8,7 +8,6 @@
 #' @param obj seer object
 #'
 #' @return list with model algo, index, and fit in each element
-#' @importFrom foreach %dopar%
 #' @export
 fit_models <- function(obj) {
   
@@ -16,9 +15,7 @@ fit_models <- function(obj) {
   
   # set backend execution
   future::plan(strategy = get(obj$backend, asNamespace("future"))())
-  doFuture::registerDoFuture()
-  
-  
+ 
   # create expanded list of model, index combos
   mod_list <- list(uid = purrr::map_chr(obj$models, "uid"),
                    index = as.character(names(obj$indices$train))) %>%
@@ -31,7 +28,7 @@ fit_models <- function(obj) {
   
   # creat flattened output structure
   purrr::flatten_dfr(mod_list) %>% 
-    dplyr:::mutate(fit = fits)
+    dplyr::mutate(fit = fits)
 }
 
 

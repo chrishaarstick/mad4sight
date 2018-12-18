@@ -30,8 +30,6 @@ used in the forecast predictions}
 
 \item{backend}{future backend mode. `sequential` creates single threaded
 execution. `multisession` creates parrallel backend}
-
-\item{x_vars}{optional column names of covariates}
 }
 \value{
 seer class object

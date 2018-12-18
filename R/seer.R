@@ -8,7 +8,6 @@
 #'
 #' @param df data.frame input
 #' @param y_var column name of target variable
-#' @param x_vars optional column names of covariates
 #' @param sampling sample constructor function. see `samples` function for
 #'   details
 #' @param models list of model constructor functions. see `model` function for
@@ -123,14 +122,14 @@ seer <- function(df,
   
   # get model performance
   performance <- predictions %>% 
-    group_by(sample, uid, index) %>%
-    unnest() %>% 
-    inner_join(df %>%
+    dplyr::group_by(sample, uid, index) %>%
+    tidyr::unnest() %>% 
+    dplyr::inner_join(df %>%
                  select(y_var) %>% 
                  mutate(rn = dplyr::row_number()),
                by = "rn") %>% 
-    do(get_accuracy(.$predicted, .$y)) %>% 
-    ungroup()
+    dplyr::do(get_accuracy(.$predicted, .$y)) %>% 
+    dplyr::ungroup()
   
   # save models and performance
   
