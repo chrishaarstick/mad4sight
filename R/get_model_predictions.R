@@ -25,7 +25,6 @@ get_model_predictions <- function(obj, fits) {
   
   # set backend execution
   future::plan(strategy = get(obj$backend, asNamespace("future"))())
-  doFuture::registerDoFuture()
   
   # convert idicies to joinable df
   indices_df <- obj$indices %>% 
