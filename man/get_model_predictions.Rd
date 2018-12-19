@@ -4,7 +4,7 @@
 \alias{get_model_predictions}
 \title{Get Model Predictions}
 \usage{
-get_model_predictions(obj, fits)
+get_model_predictions(obj)
 }
 \arguments{
 \item{obj}{seer object}

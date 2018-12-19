@@ -13,40 +13,17 @@ fit_models <- function(obj) {
   
   checkmate::assert_class(obj, "seer")
   
-  # set backend execution
-  future::plan(strategy = get(obj$backend, asNamespace("future"))())
- 
-  # create expanded list of model, index combos
-  mod_list <- list(uid = purrr::map_chr(obj$models, "uid"),
+  # create expanded list of model, index combos and fit model
+  list(uid = purrr::map_chr(obj$models, "uid"),
                    index = as.character(names(obj$indices$train))) %>%
-    purrr::cross() 
-  
-  # get all fits
-  fits <- mod_list %>% 
-    purrr::map(., ~ get_train_model_args(.$uid, .$index, obj = obj)) %>%
-    furrr::future_map(., ~ fit_model(.$model, .$df))
-  
-  # creat flattened output structure
-  purrr::flatten_dfr(mod_list) %>% 
-    dplyr::mutate(fit = fits)
+    purrr::cross_df() %>% 
+    dplyr::group_by(uid, index) %>% 
+    dplyr::mutate(model = purrr::keep(obj$models, ~.x$uid == uid)) %>% 
+    dplyr::mutate(df = list(obj$df[obj$indices$train[[index]], ])) %>% 
+    dplyr::do(fit = fit_model(.$model[[1]], .$df[[1]])) %>% 
+    dplyr::ungroup()
 }
 
-
-# Internal get model arguments function 
-get_train_model_args <- function(uid, index, obj) {
-  
-  # get model
-  model <- purrr::keep(obj$models, ~.x$uid == uid)[[1]]
-  model$y_var <- obj$y_var
-  
-  # get row index
-  rn_index <- obj$indices$train[[index]]
-  
-  # get training data
-  train_df <- obj$df[rn_index,]
-  
-  list(model = model, df = train_df)
-}
 
 
 # Internal fit model helper function
@@ -60,7 +37,7 @@ fit_model <- function(model, df) {
   x_vars <- setdiff(colnames(df), model$y_var)
   
   # set algorithm & arguments
-  algo_pack <- model_algos %>% 
+  algo_pack <- mad4sight::model_algos %>% 
     dplyr::filter(algorithm == model$algo) %>% 
     dplyr::pull(package)
   

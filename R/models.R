@@ -51,3 +51,11 @@ model <- function(algo,
     class = c("model")
   )                     
 }
+
+
+# Internal set model target helper function
+set_target <- function(model, y_var) {
+  checkmate::assert_class(model, "model")
+  model$y_var <- y_var
+  model
+}

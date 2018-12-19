@@ -16,15 +16,12 @@
 #'
 #' @return nested tibble with model predictions
 #' @export
-get_model_predictions <- function(obj, fits) {
+get_model_predictions <- function(obj) {
   
   checkmate::assert_class(obj, "seer")
-  checkmate::assert_data_frame(fits)
-  checkmate::assert_set_equal(names(fits), c("uid", "index", "fit"))
+  checkmate::assert_data_frame(obj$fits)
+  checkmate::assert_set_equal(names(obj$fits), c("uid", "index", "fit"))
   
-  
-  # set backend execution
-  future::plan(strategy = get(obj$backend, asNamespace("future"))())
   
   # convert idicies to joinable df
   indices_df <- obj$indices %>% 
@@ -32,24 +29,20 @@ get_model_predictions <- function(obj, fits) {
     tidyr::gather(index, rn, -sample)
   
   # get train predictions
-  train_preds <- fits %>%
+  train_preds <- obj$fits %>%
     dplyr::mutate(sample = "train") %>% 
     dplyr::group_by(sample, uid, index) %>%
     dplyr::do(get_fitted(.$fit[[1]])) 
    
   
   # get validation predictions
-  val_preds <- fits %>% 
+  val_preds <- obj$fits %>% 
     dplyr::mutate(sample = "validation") %>% 
     dplyr::filter(index != "single") %>% 
     dplyr::group_by(sample, uid, index) %>% 
     dplyr::mutate(model = purrr::keep(obj$models, ~.x$uid == uid)) %>% 
-    dplyr::mutate(pipe = purrr::map(model, ~purrr::pluck(., "pipeline"))) %>% 
     dplyr::mutate(df = list(obj$df[obj$indices$validation[[index]], ])) %>% 
-    dplyr::mutate(df = madutils::flow(df, pipe[[1]])) %>% 
-    dplyr::do(
-      make_predictions(.$fit[[1]], .$df[[1]], obj$y_var, obj$confidence_levels)
-    ) 
+    dplyr::do(make_predictions(.$fit[[1]], .$model[[1]], .$df[[1]], obj$confidence_levels)) 
   
   
   # Combine output, nest and returnve
@@ -60,11 +53,14 @@ get_model_predictions <- function(obj, fits) {
 
 
 # Internal make predictions function for use in evaluate models step
-make_predictions <- function(fit, df, y_var, confidence_levels) {
+make_predictions <- function(fit, model, df, confidence_levels) {
+  
+  # apply pipeline
+  df <- madutils::flow(df, model$pipeline)
   
   # set validation data
-  y <- df[[y_var]]
-  x_vars <- setdiff(colnames(df), y_var)
+  y <- df[[model$y_var]]
+  x_vars <- setdiff(colnames(df), model$y_var)
   
   # set forecast args
   forecast_args <- list(object = fit, h = length(y), level = confidence_levels)
@@ -76,11 +72,6 @@ make_predictions <- function(fit, df, y_var, confidence_levels) {
   }
   
   # make forecasts
-  forecasts <- get_forecasts(forecast_args)
+  get_forecasts(forecast_args)
 }
 
-
-# Internal get accuracy wrapper function
-get_accuracy <- function(predicted, actual) {
-  tibble::as_tibble(forecast::accuracy(predicted, actual))
-}

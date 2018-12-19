@@ -4,8 +4,8 @@
 \alias{neophyte}
 \title{Seer Constructor Function}
 \usage{
-neophyte(df, y_var, sampling, models, measure, confidence_levels, horizon,
-  forecast_xreg, backend)
+neophyte(df, y_var, sampling, models, selection, confidence_levels,
+  horizon, forecast_xreg, backend)
 }
 \arguments{
 \item{df}{data.frame input}
@@ -18,8 +18,8 @@ details}
 \item{models}{list of model constructor functions. see `model` function for
 details}
 
-\item{measure}{string input of error metric to use for model performance
-evaluation}
+\item{selection}{model_selection constructor function result. see
+`model_selection` for details}
 
 \item{confidence_levels}{numeric vector with one or two confidence levels
 used in the forecast predictions}

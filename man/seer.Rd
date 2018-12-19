@@ -4,11 +4,11 @@
 \alias{seer}
 \title{Seer function to create forecasts}
 \usage{
-seer(df, y_var, sampling = samples(method = "single", args = list()),
-  models = list(model(algo = "auto.arima")), measure = "rmse",
-  confidence_levels = c(80, 95), horizon = 1, forecast_xreg = NULL,
-  backend = "sequential", user = NULL,
-  uid = madutils::random_string("seer"), desc = "")
+seer(df, y_var, sampling = samples(method = "split", args = list(ratio =
+  0.9)), models = list(model(algo = "auto.arima")),
+  selection = model_selection(), confidence_levels = c(80, 95),
+  horizon = 1, forecast_xreg = NULL, backend = "sequential",
+  user = NULL, uid = madutils::random_string("seer"), desc = "")
 }
 \arguments{
 \item{df}{data.frame input}
@@ -21,8 +21,8 @@ details}
 \item{models}{list of model constructor functions. see `model` function for
 details}
 
-\item{measure}{string input of error metric to use for model performance
-evaluation}
+\item{selection}{model_selection constructor function result. see
+`model_selection` for details}
 
 \item{confidence_levels}{numeric vector with one or two confidence levels
 used in the forecast predictions}

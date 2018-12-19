@@ -12,8 +12,8 @@
 #'   details
 #' @param models list of model constructor functions. see `model` function for
 #'   details
-#' @param measure string input of error metric to use for model performance
-#'   evaluation
+#' @param selection model_selection constructor function result. see
+#'   `model_selection` for details
 #' @param confidence_levels numeric vector with one or two confidence levels
 #'   used in the forecast predictions
 #' @param horizon forecast horizon
@@ -27,7 +27,7 @@ neophyte <- function(df,
                      y_var,
                      sampling,
                      models,
-                     measure,
+                     selection,
                      confidence_levels,
                      horizon,
                      forecast_xreg,
@@ -36,7 +36,9 @@ neophyte <- function(df,
   checkmate::assert_data_frame(df, min.cols = 1)
   checkmate::assert_string(y_var)
   checkmate::assert_class(sampling, "samples")
+  checkmate::assert_choice(sampling$method, c("split", "slice"))
   checkmate::assert_list(models)
+  checkmate::assert_class(selection, "model_selection")
   checkmate::assert_numeric(confidence_levels, lower = 50, upper = 100, min.len = 1, max.len = 2)
   checkmate::assert_numeric(horizon, lower = 1)
   checkmate::assert_data_frame(forecast_xreg, null.ok = TRUE)
@@ -55,14 +57,17 @@ neophyte <- function(df,
       y_var = y_var,
       sampling = sampling,
       indices = indices,
-      models = models,
-      fit = tibble::tibble(),
-      performance = tibble::tibble(),
-      measure = measure,
+      models = purrr::modify(models, ~set_target(.x, y_var)),
       confidence_levels = confidence_levels,
-      created_at = Sys.time(),
+      fits = tibble::tibble(),
+      predictions = tibble::tibble(),
+      performance = tibble::tibble(),
+      selection = selection,
       final_model = NULL,
       forecast = tibble::tibble(),
+      horizon = horizon,
+      forecast_xreg = forecast_xreg,
+      created_at = Sys.time(),
       backend = backend
     ),
     class = "seer"
@@ -87,9 +92,9 @@ neophyte <- function(df,
 #' @examples
 seer <- function(df,
                  y_var,
-                 sampling = samples(method = "single", args = list()),
+                 sampling = samples(method = "split", args = list(ratio = .9)),
                  models = list(model(algo = "auto.arima")),
-                 measure = "rmse",
+                 selection = model_selection(),
                  confidence_levels = c(80, 95),
                  horizon = 1,
                  forecast_xreg = NULL,
@@ -104,7 +109,7 @@ seer <- function(df,
                   y_var,
                   sampling,
                   models,
-                  measure,
+                  selection,
                   confidence_levels,
                   horizon,
                   forecast_xreg,
@@ -114,25 +119,25 @@ seer <- function(df,
   obj$desc <- desc
   
   
+  # set backend execution
+  future::plan(strategy = get(obj$backend, asNamespace("future"))())
+  
   # fit models
-  fits <- fit_models(obj)
+  obj$fits <- fit_models(obj)
   
   # get predictions
-  predictions <- get_model_predictions(obj, fits)
+  obj$predictions <- get_model_predictions(obj)
   
   # get model performance
-  performance <- predictions %>% 
-    dplyr::group_by(sample, uid, index) %>%
-    tidyr::unnest() %>% 
-    dplyr::inner_join(df %>%
-                 select(y_var) %>% 
-                 mutate(rn = dplyr::row_number()),
-               by = "rn") %>% 
-    dplyr::do(get_accuracy(.$predicted, .$y)) %>% 
-    dplyr::ungroup()
+  obj$performance <- get_model_performance(obj$predictions, dplyr::select(df, y_var))
+    
+  # select final model
+  obj$final_model <- get_final_model(obj)
   
-  # save models and performance
+  # create forecasts
+  obj$forecast <- make_final_forecasts(obj)
   
+  obj
 }
 
 
