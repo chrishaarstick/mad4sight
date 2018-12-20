@@ -154,3 +154,51 @@ test_that("make_final_forecasts function works as expected", {
 
 
 
+test_that("seer model with arguments works as expected", {
+  
+  m1 <- model(algo = "auto.arima", args = list(lambda = "auto"))
+  
+  s1 <- seer(df,
+               y_var  = "y",
+               sampling = samples(method = "split", args = list(ratio = .9)),
+               models = list(m1),
+               selection = model_selection(),
+               confidence_levels = c(80, 95),
+               horizon = 1,
+               forecast_xreg = NULL,
+               backend = "sequential",
+               user = NULL,
+               uid = madutils::random_string("seer"),
+               desc = "")
+  
+  expect_class(s1, "seer")
+  expect_data_frame(s1$forecast, nrows = 1)
+})
+
+
+
+test_that("selection with multiple models works as expected", {
+  
+  m1 <- model(algo = "auto.arima", args = list(lambda = "auto"))
+  m2 <- model(algo = "ets")
+  
+  selection <- model_selection(measure = "RMSE", n = 2, weights = "weighted")
+  
+  s1 <- seer(df,
+             y_var  = "y",
+             sampling = samples(method = "split", args = list(ratio = .9)),
+             models = list(m1, m2),
+             selection = selection,
+             confidence_levels = c(80, 95),
+             horizon = 1,
+             forecast_xreg = NULL,
+             backend = "sequential",
+             user = NULL,
+             uid = madutils::random_string("seer"),
+             desc = "")
+  
+  expect_class(s1, "seer")
+  expect_data_frame(s1$forecast, nrows = 1)
+  expect_data_frame(s1$final_model, nrows = 2)
+  expect_equal(sum(s1$final_model$forecast_wt), 1)
+})
