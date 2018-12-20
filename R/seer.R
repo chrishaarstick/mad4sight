@@ -129,7 +129,7 @@ seer <- function(df,
   obj$predictions <- get_model_predictions(obj)
   
   # get model performance
-  obj$performance <- get_model_performance(obj$predictions, dplyr::select(df, y_var))
+  obj$performance <- get_model_performance(obj)
     
   # select final model
   obj$final_model <- get_final_model(obj)
