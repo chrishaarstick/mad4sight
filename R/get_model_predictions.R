@@ -23,16 +23,18 @@ get_model_predictions <- function(obj) {
   checkmate::assert_set_equal(names(obj$fits), c("uid", "index", "fit"))
   
   
-  # convert idicies to joinable df
+  # convert idicies to join-able df
   indices_df <- obj$indices %>% 
     dplyr::bind_rows(. , .id = "sample") %>%
-    tidyr::gather(index, rn, -sample)
+    tidyr::gather(index, rn, -sample) %>% 
+    tidyr::nest(rn)
   
   # get train predictions
   train_preds <- obj$fits %>%
     dplyr::mutate(sample = "train") %>% 
     dplyr::group_by(sample, uid, index) %>%
-    dplyr::do(get_fitted(.$fit[[1]])) 
+    dplyr::do(get_fitted(.$fit[[1]])) %>% 
+    dplyr::ungroup()
    
   
   # get validation predictions
@@ -42,13 +44,16 @@ get_model_predictions <- function(obj) {
     dplyr::group_by(sample, uid, index) %>% 
     dplyr::mutate(model = purrr::keep(obj$models, ~.x$uid == uid)) %>% 
     dplyr::mutate(df = list(obj$df[obj$indices$validation[[index]], ])) %>% 
-    dplyr::do(make_predictions(.$fit[[1]], .$model[[1]], .$df[[1]], obj$confidence_levels)) 
+    dplyr::do(make_predictions(.$fit[[1]], .$model[[1]], .$df[[1]], obj$confidence_levels)) %>% 
+    dplyr::ungroup()
   
   
   # Combine output, nest and returnve
   dplyr::bind_rows(train_preds, val_preds) %>% 
+    tidyr::nest(-sample, -uid, -index) %>% 
     dplyr::inner_join(indices_df, by = c("sample","index")) %>% 
-    tidyr::nest()
+    tidyr::unnest() %>% 
+    tidyr::nest(-sample, -uid, -index) 
 }
 
 
