@@ -36,7 +36,7 @@ neophyte <- function(df,
   checkmate::assert_data_frame(df, min.cols = 1)
   checkmate::assert_string(y_var)
   checkmate::assert_class(sampling, "samples")
-  checkmate::assert_choice(sampling$method, c("split", "slice"))
+  checkmate::assert_choice(sampling$method, c("split", "slices"))
   checkmate::assert_list(models)
   checkmate::assert_class(selection, "model_selection")
   checkmate::assert_numeric(confidence_levels, lower = 50, upper = 100, min.len = 1, max.len = 2)
