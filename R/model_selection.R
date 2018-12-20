@@ -112,7 +112,7 @@ make_forecasts <- function(fit, model, h, xreg = NULL, confidence_levels) {
   
   algo <- get(as.character(model$algo), asNamespace(algo_pack))
   
-  if(!is.null(xreg) & "xreg" %in% names(formals(algo))) {
+  if(!is.null(fit$xreg) & "xreg" %in% names(formals(algo))) {
     
     # apply pipeline
     xreg <- dplyr::mutate(xreg, !!rlang::sym(model$y_var) := 1)

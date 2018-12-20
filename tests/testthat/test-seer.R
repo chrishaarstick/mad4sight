@@ -3,6 +3,7 @@
 
 # R Libraries
 library(mad4sight)
+library(madutils)
 library(purrr)
 library(testthat)
 library(checkmate)
@@ -202,3 +203,38 @@ test_that("selection with multiple models works as expected", {
   expect_data_frame(s1$final_model, nrows = 2)
   expect_equal(sum(s1$final_model$forecast_wt), 1)
 })
+
+
+test_that("covariate model works as expected", {
+  
+  df1 <- mutate(df, x = rnorm(n()))
+  
+  p1 <- pipeline(expr = function(df) {select(df, y)})
+  p2 <- pipeline(expr = function(df) {select(df, y, x)})
+  
+  m1 <- model(algo = "auto.arima", pipe = p1)
+  m2 <- model(algo = "auto.arima", pipe = p2)
+  
+  selection <- model_selection(measure = "RMSE", n = 2, weights = "weighted")
+  
+  xreg <- tibble(x = rnorm(5))
+  
+  s1 <- seer(df1,
+             y_var  = "y",
+             sampling = samples(method = "split", args = list(ratio = .9)),
+             models = list(m1, m2),
+             selection = selection,
+             confidence_levels = c(80, 95),
+             horizon = 5,
+             forecast_xreg = xreg,
+             backend = "sequential",
+             user = NULL,
+             uid = madutils::random_string("seer"),
+             desc = "")
+  
+  expect_class(s1, "seer")
+  expect_data_frame(s1$forecast, nrows = 5)
+  expect_data_frame(s1$final_model, nrows = 2)
+  expect_equal(sum(s1$final_model$forecast_wt), 1)
+})
+
